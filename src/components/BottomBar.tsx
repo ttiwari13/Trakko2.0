@@ -27,17 +27,17 @@ export default function BottomBar({
 
   const handleStart = () => {
     if (!isAuthenticated) {
-      onRequireAuth(); // 🚨 open signup modal
+      onRequireAuth();
       return;
     }
 
     setActive("start");
-    console.log("Start game 🚀");
+    console.log("Start game ");
   };
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-lg px-4 py-2 flex items-center gap-4 z-50">
-      
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-lg px-4 py-2 flex items-center gap-4">
+
       {/* Start */}
       <button
         onClick={handleStart}

@@ -1,163 +1,123 @@
 "use client";
 
 import { useState } from "react";
-import { X, Mail, User, Lock, IdCard } from "lucide-react";
+import { X } from "lucide-react";
 
-type SignupModalProps = {
-  onSuccess: () => void;
+type Props = {
   onClose: () => void;
+  onSuccess: () => void;
+  onLoginClick: () => void;
 };
 
-export default function SignupModal({ onSuccess, onClose }: SignupModalProps) {
+export default function SignupModal({
+  onClose,
+  onSuccess,
+  onLoginClick,
+}: Props) {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
 
-    if (!name || !username || !email || !password) {
-      setError("All fields are required");
+  if (!name || !username || !email || !password) return;
+
+  try {
+    const res = await fetch("/api/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        username,
+        email,
+        password,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Signup failed");
       return;
     }
+    onSuccess(); 
+  } catch (err) {
+    console.error("Signup failed:", err);
+    alert("Something went wrong");
+  }
+};
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          username,
-          email,
-          password,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Signup failed");
-      } else {
-        onSuccess();
-      }
-    } catch {
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
-
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-black transition"
-        >
-          <X size={20} />
-        </button>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
 
         {/* Header */}
-        <div className="mb-6 text-center">
-          <h2 className="text-3xl font-bold">Create account</h2>
-          <p className="mt-2 text-sm text-gray-500">
-            One step away from greatness 🚀
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Create account</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-black">
+            <X />
+          </button>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="space-y-3">
+          <input
+            placeholder="Full name"
+            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
 
-          {/* Name */}
-          <div className="relative">
-            <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-              required
-            />
-          </div>
+          <input
+            placeholder="Username"
+            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
 
-          {/* Username */}
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-              required
-            />
-          </div>
+          <input
+            type="email"
+            placeholder="Email address"
+            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-              required
-            />
-          </div>
-
-          {/* Confirm Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="password"
-              placeholder="Confirm password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-              required
-            />
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
-          )}
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 font-semibold text-white hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-600 py-2 text-white font-medium hover:bg-blue-700 transition"
           >
-            {loading ? "Creating account..." : "Sign up"}
+            Sign up
           </button>
         </form>
+
+        {/* Footer */}
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <button
+            type="button"
+            onClick={onLoginClick}
+            className="text-blue-600 hover:underline"
+          >
+            Log in
+          </button>
+        </p>
       </div>
     </div>
   );
