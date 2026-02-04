@@ -9,7 +9,7 @@ import LoginModal from "@/components/LoginModal";
 
 export default function Page() {
   const [user, setUser] = useState<{ username: string } | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  //const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
@@ -45,7 +45,7 @@ export default function Page() {
 
   {/* UI layer */}
   <BottomBar
-    isAuthenticated={isAuthenticated}
+    isAuthenticated={!!user}
     onRequireAuth={() => setShowLogin(true)}
   />
 
@@ -70,8 +70,8 @@ export default function Page() {
         setShowLogin(false);
         setShowSignup(true);
       }}
-      onSuccess={() => {
-        setIsAuthenticated(true);
+      onSuccess={(loggedInUser) => {
+        setUser(loggedInUser);
         setShowLogin(false);
       }}
     />

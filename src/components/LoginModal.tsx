@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 type LoginModalProps = {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (user: { username: string }) => void;
   onSignupClick: () => void; 
 };
 
@@ -48,7 +48,7 @@ export default function LoginModal({
       return;
     }
     setLoading(false);
-    onSuccess(); 
+    onSuccess(data.user);
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     setError("Something went wrong");
