@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Heart, Bookmark, LogOut } from "lucide-react";
+import { Menu, Heart, Bookmark, LogOut, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type SidebarProps = {
@@ -17,9 +17,13 @@ export default function Sidebar({
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const firstLetter = user?.username?.[0]?.toUpperCase();
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -37,45 +41,73 @@ export default function Sidebar({
 
   const handleLogout = async () => {
     await fetch("/api/logout", {
-  method: "POST",
-  credentials: "include",
-});
-onLogout();
-
+      method: "POST",
+      credentials: "include",
+    });
+    onLogout();
   };
 
   return (
-    <aside className="relative z-[1000] w-16 bg-white border-r flex flex-col items-center py-4 gap-6">
+    <aside className="relative z-[1000] w-20 bg-white border-r border-gray-200 flex flex-col items-center py-6 gap-8 shadow-sm">
       {/* Avatar */}
-      <button
-        onClick={handleAvatarClick}
-        className="h-10 w-10 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center"
-      >
-        {firstLetter ?? "?"}
-      </button>
-      {open && user && (
-        <div
-          ref={dropdownRef}
-          className="absolute left-16 top-4 w-48 bg-white shadow-lg rounded-md border z-[2000]"
+      <div className="relative">
+        <button
+          onClick={handleAvatarClick}
+          className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold text-lg flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all duration-200 ring-2 ring-blue-100"
+          title={user ? `@${user.username}` : "Login"}
         >
-          <div className="px-4 py-2 text-sm text-gray-700 border-b">
-            Signed in as <br />
-            <span className="font-semibold">{user.username}</span>
-          </div>
+          {firstLetter ?? <User size={20} />}
+        </button>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+        {open && user && (
+          <div
+            ref={dropdownRef}
+            className="absolute left-20 top-0 w-56 bg-white shadow-2xl rounded-2xl border border-gray-200 overflow-hidden z-[2000] animate-in fade-in slide-in-from-left-2 duration-200"
           >
-            <LogOut size={16} />
-            Logout
-          </button>
-        </div>
-      )}
+            <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Signed in as</p>
+              <p className="font-semibold text-gray-900 text-base">
+                @{user.username}
+              </p>
+            </div>
 
-      <Menu className="cursor-pointer" />
-      <Bookmark className="cursor-pointer" />
-      <Heart className="cursor-pointer" />
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-5 py-3 text-sm hover:bg-red-50 text-red-600 font-medium transition-colors group"
+            >
+              <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="w-8 h-px bg-gray-200"></div>
+
+      {/* Navigation Icons */}
+      <nav className="flex flex-col items-center gap-6">
+        <button
+          className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-200 hover:scale-110 group"
+          title="Menu"
+        >
+          <Menu size={22} className="group-hover:rotate-180 transition-transform duration-300" />
+        </button>
+
+        <button
+          className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-200 hover:scale-110 group"
+          title="Bookmarks"
+        >
+          <Bookmark size={22} className="group-hover:fill-current transition-all" />
+        </button>
+
+        <button
+          className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-red-500 transition-all duration-200 hover:scale-110 group"
+          title="Favorites"
+        >
+          <Heart size={22} className="group-hover:fill-current transition-all" />
+        </button>
+      </nav>
     </aside>
   );
 }
