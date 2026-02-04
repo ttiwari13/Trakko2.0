@@ -8,11 +8,13 @@ type ActiveBtn = "start" | "friend" | "share" | null;
 type BottomBarProps = {
   isAuthenticated: boolean;
   onRequireAuth: () => void;
+  onStart: () => void;
 };
 
 export default function BottomBar({
   isAuthenticated,
   onRequireAuth,
+  onStart,
 }: BottomBarProps) {
   const [active, setActive] = useState<ActiveBtn>(null);
 
@@ -32,40 +34,30 @@ export default function BottomBar({
     }
 
     setActive("start");
-    console.log("Start game ");
+    onStart();
   };
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-white rounded-xl shadow-lg px-4 py-2 flex items-center gap-4">
-
-      {/* Start */}
       <button
         onClick={handleStart}
-        className={`${base} ${
-          active === "start" ? activeStyle : inactive
-        }`}
+        className={`${base} ${active === "start" ? activeStyle : inactive}`}
       >
         <Play className="h-4 w-4" />
         Start
       </button>
 
-      {/* Add Friend */}
       <button
         onClick={() => setActive("friend")}
-        className={`${base} ${
-          active === "friend" ? activeStyle : inactive
-        }`}
+        className={`${base} ${active === "friend" ? activeStyle : inactive}`}
       >
         <UserPlus className="h-4 w-4" />
         Add Friend
       </button>
 
-      {/* Share */}
       <button
         onClick={() => setActive("share")}
-        className={`${base} ${
-          active === "share" ? activeStyle : inactive
-        }`}
+        className={`${base} ${active === "share" ? activeStyle : inactive}`}
       >
         <Share2 className="h-4 w-4" />
         Share
