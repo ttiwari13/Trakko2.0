@@ -14,3 +14,28 @@ model User{
   password  String
   createdAt DateTime @default(now())
 }
+
+model Path {
+  id         String       @id @default(uuid())
+  creatorId String
+  inviteCode String       @unique
+  createdAt DateTime     @default(now())
+
+  creator   User         @relation(fields: [creatorId], references: [id])
+  members   PathMember[]
+
+  @@index([creatorId])
+}
+
+model PathMember {
+  id        String   @id @default(uuid())
+  pathId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  path Path @relation(fields: [pathId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([pathId, userId]) 
+  @@index([userId])
+}

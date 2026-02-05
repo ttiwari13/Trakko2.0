@@ -1,9 +1,9 @@
 "use client";
 
-import { Play, UserPlus, Share2 } from "lucide-react";
+import { Play, UserPlus, Share2, Bookmark } from "lucide-react";
 import { useState } from "react";
 
-type ActiveBtn = "start" | "friend" | "share" | null;
+type ActiveBtn = "start" | "friend" | "share" | "save" |null;
 
 type BottomBarProps = {
   isAuthenticated: boolean;
@@ -52,7 +52,7 @@ export default function BottomBar({
         className={`${base} ${active === "friend" ? activeStyle : inactive}`}
       >
         <UserPlus className="h-4 w-4" />
-        Add Friend
+        Add
       </button>
 
       <button
@@ -61,6 +61,13 @@ export default function BottomBar({
       >
         <Share2 className="h-4 w-4" />
         Share
+      </button>
+      <button
+        onClick={() => setActive("save")}
+        className={`${base} ${active === "save" ? activeStyle : inactive}`}
+      >
+        <Bookmark className="h-4 w-4" />
+        Save
       </button>
     </div>
   );

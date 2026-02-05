@@ -10,12 +10,12 @@ import LoginModal from "@/components/LoginModal";
 export default function Page() {
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [showSignup, setShowSignup] = useState(false);
+
   const [showLogin, setShowLogin] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
-
   useEffect(() => {
     const checkAuth = async () => {
       const res = await fetch("/api/me");
@@ -40,8 +40,10 @@ export default function Page() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+         
       },
       () => {
+         
         alert("Please allow location access");
       },
       { enableHighAccuracy: true }

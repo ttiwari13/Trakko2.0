@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Heart, Bookmark, LogOut, User } from "lucide-react";
+import { Menu, Heart, LogOut, User, MapPinned  } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type SidebarProps = {
@@ -95,18 +95,21 @@ export default function Sidebar({
         </button>
 
         <button
-          className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-200 hover:scale-110 group"
-          title="Bookmarks"
-        >
-          <Bookmark size={22} className="group-hover:fill-current transition-all" />
-        </button>
-
-        <button
           className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-red-500 transition-all duration-200 hover:scale-110 group"
           title="Favorites"
         >
           <Heart size={22} className="group-hover:fill-current transition-all" />
         </button>
+        <button
+  className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-blue-600 transition-all duration-200 hover:scale-110 group"
+  title="Show Routes"
+>
+  <MapPinned
+    size={22}
+    className="group-hover:scale-110 transition-transform"
+  />
+</button>
+
       </nav>
     </aside>
   );
