@@ -26,7 +26,7 @@ model Path {
 
   creator User         @relation(fields: [creatorId], references: [id])
   members PathMember[]
-
+  invites   PathInvite[] 
   @@index([creatorId])
 }
 
@@ -41,4 +41,16 @@ model PathMember {
 
   @@unique([pathId, userId])
   @@index([userId])
+}
+model PathInvite {
+  id        String   @id @default(uuid())
+  pathId    String
+  email     String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  accepted  Boolean  @default(false)
+
+  path Path @relation(fields: [pathId], references: [id])
+
+  @@index([pathId])
 }
