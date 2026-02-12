@@ -27,7 +27,7 @@ function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   useEffect(() => {
     map.flyTo([lat, lng], 16, {
       animate: true,
-      duration: 1.5,
+      duration: 1.2,
     });
   }, [lat, lng, map]);
 
