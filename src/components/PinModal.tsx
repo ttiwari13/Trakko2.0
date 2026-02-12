@@ -1,30 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import React from "react";
+
+export type PinFormData = {
+  title: string;
+  description: string;
+  image?: string;
+};
 
 type Props = {
   lat: number;
   lng: number;
+  title: string;
+  description: string;
+  image?: string;
+  readOnly?: boolean;
+  onChange: (data: PinFormData) => void;
   onClose: () => void;
-  onSave: (data: {
-    title: string;
-    description: string;
-    image?: string;
-  }) => void;
+  onSave: () => void;
 };
 
-export default function PinModal({ lat, lng, onClose, onSave }: Props) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState<string | undefined>();
+export default function PinModal({
+  title,
+  description,
+  image,
+  readOnly = false,
+  onChange,
+  onClose,
+  onSave,
+}: Props) {
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (readOnly) return;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImage(reader.result as string);
+      onChange({
+        title,
+        description,
+        image: reader.result as string,
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -32,42 +51,71 @@ export default function PinModal({ lat, lng, onClose, onSave }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[2000]">
       <div className="bg-white p-6 rounded-xl w-[400px] space-y-4">
-        <h2 className="text-lg font-semibold">Add Pin</h2>
+        <h2 className="text-lg font-semibold">
+          {readOnly ? "View Memory" : "Add Memory"}
+        </h2>
 
         <input
           type="text"
           placeholder="Title"
           className="w-full border p-2 rounded"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          disabled={readOnly}
+          onChange={(e) =>
+            onChange({
+              title: e.target.value,
+              description,
+              image,
+            })
+          }
         />
 
         <textarea
           placeholder="Description"
           className="w-full border p-2 rounded"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          disabled={readOnly}
+          onChange={(e) =>
+            onChange({
+              title,
+              description: e.target.value,
+              image,
+            })
+          }
         />
 
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        {!readOnly && (
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
+        )}
+
+        {image && (
+          <img
+            src={image}
+            alt="preview"
+            className="w-full h-40 object-cover rounded"
+          />
+        )}
 
         <div className="flex justify-end gap-2">
           <button
             className="px-4 py-2 bg-gray-200 rounded"
             onClick={onClose}
           >
-            Cancel
+            {readOnly ? "Close" : "Cancel"}
           </button>
 
-          <button
-            className="px-4 py-2 bg-blue-600 text-white rounded"
-            onClick={() => {
-              onSave({ title, description, image });
-              onClose();
-            }}
-          >
-            Save
-          </button>
+          {!readOnly && (
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+              onClick={onSave}
+            >
+              Save
+            </button>
+          )}
         </div>
       </div>
     </div>
