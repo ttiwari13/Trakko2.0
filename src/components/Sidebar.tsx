@@ -1,16 +1,22 @@
 "use client";
 
-import { Menu, Heart, LogOut, User, MapPinned  } from "lucide-react";
+import { Menu, Heart, LogOut, User, MapPinned } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+
+type ViewType = "map" | "saved" | "favourites";
 
 type SidebarProps = {
   user: { username: string } | null;
+  activeView: ViewType;
+  onChangeView: (view: ViewType) => void;
   onRequireLogin: () => void;
   onLogout: () => void;
 };
 
 export default function Sidebar({
   user,
+  activeView,
+  onChangeView,
   onRequireLogin,
   onLogout,
 }: SidebarProps) {
@@ -27,6 +33,7 @@ export default function Sidebar({
         setOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
@@ -44,12 +51,14 @@ export default function Sidebar({
       method: "POST",
       credentials: "include",
     });
+
     onLogout();
+    setOpen(false);
   };
 
   return (
     <aside className="relative z-[1000] w-20 bg-white border-r border-gray-200 flex flex-col items-center py-6 gap-8 shadow-sm">
-      {/* Avatar */}
+    
       <div className="relative">
         <button
           onClick={handleAvatarClick}
@@ -75,40 +84,53 @@ export default function Sidebar({
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-5 py-3 text-sm hover:bg-red-50 text-red-600 font-medium transition-colors group"
             >
-              <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+              <LogOut
+                size={18}
+                className="group-hover:scale-110 transition-transform"
+              />
               Logout
             </button>
           </div>
         )}
       </div>
-
-      {/* Divider */}
       <div className="w-8 h-px bg-gray-200"></div>
-
-      {/* Navigation Icons */}
       <nav className="flex flex-col items-center gap-6">
+
         <button
-          className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-200 hover:scale-110 group"
-          title="Menu"
+          onClick={() => onChangeView("map")}
+          className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
+            activeView === "map"
+              ? "bg-blue-100 text-blue-600"
+              : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+          }`}
+          title="Map"
         >
-          <Menu size={22} className="group-hover:rotate-180 transition-transform duration-300" />
+          <Menu size={22} />
         </button>
 
         <button
-          className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-red-500 transition-all duration-200 hover:scale-110 group"
+          onClick={() => onChangeView("saved")}
+          className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
+            activeView === "saved"
+              ? "bg-blue-100 text-blue-600"
+              : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+          }`}
+          title="Saved Routes"
+        >
+          <MapPinned size={22} />
+        </button>
+
+        <button
+          onClick={() => onChangeView("favourites")}
+          className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
+            activeView === "favourites"
+              ? "bg-red-100 text-red-500"
+              : "hover:bg-gray-100 text-gray-600 hover:text-red-500"
+          }`}
           title="Favorites"
         >
-          <Heart size={22} className="group-hover:fill-current transition-all" />
+          <Heart size={22} />
         </button>
-        <button
-  className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 hover:text-blue-600 transition-all duration-200 hover:scale-110 group"
-  title="Show Routes"
->
-  <MapPinned
-    size={22}
-    className="group-hover:scale-110 transition-transform"
-  />
-</button>
 
       </nav>
     </aside>
