@@ -18,6 +18,7 @@ type Props = {
   onChange: (data: PinFormData) => void;
   onClose: () => void;
   onSave: () => void;
+  onEdit?: () => void;
 };
 
 export default function PinModal({
@@ -28,6 +29,7 @@ export default function PinModal({
   onChange,
   onClose,
   onSave,
+  onEdit,
 }: Props) {
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -52,7 +54,7 @@ export default function PinModal({
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[2000]">
       <div className="bg-white p-6 rounded-xl w-[400px] space-y-4">
         <h2 className="text-lg font-semibold">
-          {readOnly ? "View Memory" : "Add Memory"}
+          {readOnly ? "View Memory" : "Add / Edit Memory"}
         </h2>
 
         <input
@@ -105,8 +107,17 @@ export default function PinModal({
             className="px-4 py-2 bg-gray-200 rounded"
             onClick={onClose}
           >
-            {readOnly ? "Close" : "Cancel"}
+            Close
           </button>
+
+          {readOnly && onEdit && (
+            <button
+              className="px-4 py-2 bg-yellow-500 text-white rounded"
+              onClick={onEdit}
+            >
+              Edit
+            </button>
+          )}
 
           {!readOnly && (
             <button

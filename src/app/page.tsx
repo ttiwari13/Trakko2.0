@@ -21,6 +21,7 @@ export default function Page() {
   const [showSignup, setShowSignup] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>("map");
+
   const engine = useLiveLocation();
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function Page() {
   };
 
   return (
-    <div className="h-screen w-screen flex bg-white text-black">
+    <div className="h-screen w-screen flex bg-white text-black overflow-hidden">
       <Sidebar
         user={user}
         activeView={activeView}
@@ -53,11 +54,10 @@ export default function Page() {
         onRequireLogin={() => setShowLogin(true)}
         onLogout={() => setUser(null)}
       />
-
-      <main className="relative flex-1 overflow-hidden">
+      <main className="relative flex-1 h-full overflow-hidden">
         {activeView === "map" && (
           <>
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0">
               <MapClient
                 currentLocation={engine.currentLocation}
                 routePoints={engine.routePoints}
@@ -72,17 +72,22 @@ export default function Page() {
             />
           </>
         )}
+
         {activeView === "saved" && (
-          <SaveRoute routePoints={engine.routePoints} />
+          <div className="h-full overflow-auto">
+            <SaveRoute routePoints={engine.routePoints} />
+          </div>
         )}
+
         {activeView === "favourites" && (
-          <div className="p-10">
+          <div className="h-full overflow-auto p-10">
             <h2 className="text-2xl font-bold">Favourites</h2>
             <p className="text-gray-500 mt-4">
               Your favourite routes will appear here.
             </p>
           </div>
         )}
+
         {showSignup && (
           <SignupModal
             onClose={() => setShowSignup(false)}
