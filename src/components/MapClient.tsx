@@ -1,245 +1,221 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import PinModal, { PinFormData } from "./PinModal";
-
-export type LocationPoint = {
-  lat: number;
-  lng: number;
-};
-
-type Memory = {
-  id: string;
-  lat: number;
-  lng: number;
-  title: string;
-  description: string;
-  image?: string;
-};
-
-interface MapClientProps {
-  currentLocation: LocationPoint | null;
-  routePoints: LocationPoint[];
-}
+import PinModal, { type PinFormData } from "./PinModal";
+import type { PinData } from "@/app/page";
 delete (L.Icon.Default.prototype as any)._getIconUrl;
-
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+const pinIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/684/684908.png",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
 });
 
-export default function MapClient({
-  currentLocation,
-  routePoints,
-}: MapClientProps) {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const routeRef = useRef<L.Polyline | null>(null);
-  const userMarkerRef = useRef<L.Marker | null>(null);
-  const memoryLayerRef = useRef<L.LayerGroup | null>(null);
+type Props = {
+  currentLocation: { lat: number; lng: number } | null;
+  routePoints: { lat: number; lng: number }[];
+  pins?: PinData[];
+  onPinsChange?: (pins: PinData[]) => void;
+  onPinClick?: (pin: PinData) => void; 
+};
 
-  const [memories, setMemories] = useState<Memory[]>([]);
-  const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
-  const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
-  const [clickedPosition, setClickedPosition] =
-    useState<LocationPoint | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+function MapUpdater({ center }: { center: { lat: number; lng: number } | null }) {
+  const map = useMap();
 
-  const [formData, setFormData] = useState<PinFormData>({
-    title: "",
-    description: "",
-    image: undefined,
+  useEffect(() => {
+    if (center) {
+      map.setView([center.lat, center.lng], map.getZoom());
+    }
+  }, [center, map]);
+
+  return null;
+}
+
+function MapClickHandler({ 
+  onMapClick 
+}: { 
+  onMapClick: (e: L.LeafletMouseEvent) => void 
+}) {
+  useMapEvents({
+    click: onMapClick,
   });
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+  return null;
+}
 
-    const map = L.map(mapContainerRef.current, {
-      center: [20.5937, 78.9629],
-      zoom: 5,
-      zoomControl: true,
+export default function MapClient({ 
+  currentLocation, 
+  routePoints, 
+  pins = [], 
+  onPinsChange,
+  onPinClick 
+}: Props) {
+  const mapRef = useRef<L.Map | null>(null);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [selectedPin, setSelectedPin] = useState<PinData | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
+
+  const defaultCenter = { lat: 28.6139, lng: 77.2090 }; 
+  const center = currentLocation || defaultCenter;
+
+  const handleMapClick = (e: L.LeafletMouseEvent) => {
+    if (!onPinsChange) return;
+    const { lat, lng } = e.latlng;
+    const pointIndex = routePoints.length;
+    setSelectedPin({
+      lat,
+      lng,
+      title: "",
+      description: "",
+      pointIndex,
     });
+    setEditingIndex(null);
+    setReadOnly(false);
+    setShowPinModal(true);
+  };
+  const handlePinClick = (pin: PinData, index: number) => {
+    if (onPinClick) {
+      onPinClick(pin);
+      return;
+    }
+    setSelectedPin(pin);
+    setEditingIndex(index);
+    setReadOnly(!onPinsChange); 
+    setShowPinModal(true);
+  };
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 19,
-    }).addTo(map);
-
-    memoryLayerRef.current = L.layerGroup().addTo(map);
-
-    map.on("click", (e) => {
-      setClickedPosition({
-        lat: e.latlng.lat,
-        lng: e.latlng.lng,
+  const handlePinChange = (data: PinFormData) => {
+    if (selectedPin) {
+      setSelectedPin({
+        ...selectedPin,
+        ...data,
       });
-      setFormData({ title: "", description: "", image: undefined });
-      setShowCreateModal(true);
-    });
-
-    mapRef.current = map;
-
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 300);
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current || !currentLocation) return;
-
-    if (userMarkerRef.current) {
-      userMarkerRef.current.remove();
+    }
+  };
+  const handleSavePin = () => {
+    if (!selectedPin || !onPinsChange) return;
+    if (!selectedPin.title.trim()) {
+      alert("Please enter a title for the pin");
+      return;
     }
 
-    const marker = L.marker([currentLocation.lat, currentLocation.lng])
-      .addTo(mapRef.current)
-      .bindPopup("You are here");
-
-    userMarkerRef.current = marker;
-
-    mapRef.current.setView([currentLocation.lat, currentLocation.lng], 15);
-  }, [currentLocation]);
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    if (routeRef.current) {
-      routeRef.current.remove();
-      routeRef.current = null;
+    if (editingIndex !== null) {
+      const newPins = [...pins];
+      newPins[editingIndex] = selectedPin;
+      onPinsChange(newPins);
+    } else {
+      onPinsChange([...pins, selectedPin]);
     }
 
-    if (routePoints.length === 0) return;
+    setShowPinModal(false);
+    setSelectedPin(null);
+    setEditingIndex(null);
+  };
 
-    const latlngs = routePoints.map((p) => [p.lat, p.lng]) as [
-      number,
-      number
-    ][];
+  const handleEdit = () => {
+    setReadOnly(false);
+  };
 
-    const polyline = L.polyline(latlngs, {
-      color: "blue",
-      weight: 5,
-    }).addTo(mapRef.current);
+  const handleDeletePin = () => {
+    if (!onPinsChange || editingIndex === null) return;
+    
+    if (!confirm("Delete this pin?")) return;
 
-    routeRef.current = polyline;
+    const newPins = pins.filter((_, i) => i !== editingIndex);
+    onPinsChange(newPins);
+    
+    setShowPinModal(false);
+    setSelectedPin(null);
+    setEditingIndex(null);
+  };
+
+  useEffect(() => {
+    if (mapRef.current && routePoints.length > 0) {
+      const bounds = L.latLngBounds(routePoints.map((p) => [p.lat, p.lng]));
+      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    }
   }, [routePoints]);
-  useEffect(() => {
-    if (!memoryLayerRef.current) return;
-
-    memoryLayerRef.current.clearLayers();
-
-    memories.forEach((memory) => {
-      const marker = L.marker([memory.lat, memory.lng]).addTo(
-        memoryLayerRef.current!
-      );
-
-      marker.bindTooltip(memory.title, {
-        permanent: true,
-        direction: "top",
-      });
-
-      marker.on("click", () => {
-        setSelectedMemory(memory);
-      });
-    });
-  }, [memories]);
-
-  const handleCreateMemory = () => {
-    if (!clickedPosition) return;
-
-    const newMemory: Memory = {
-      id: Date.now().toString(),
-      lat: clickedPosition.lat,
-      lng: clickedPosition.lng,
-      ...formData,
-    };
-
-    setMemories((prev) => [...prev, newMemory]);
-    setShowCreateModal(false);
-    setClickedPosition(null);
-  };
-  const handleEditMemory = () => {
-    if (!editingMemory) return;
-
-    setMemories((prev) =>
-      prev.map((m) =>
-        m.id === editingMemory.id ? { ...m, ...formData } : m
-      )
-    );
-
-    setEditingMemory(null);
-  };
-  const startEditing = (memory: Memory) => {
-    setFormData({
-      title: memory.title,
-      description: memory.description,
-      image: memory.image,
-    });
-    setEditingMemory(memory);
-    setSelectedMemory(null);
-  };
 
   return (
     <>
-      <div
-        ref={mapContainerRef}
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-        }}
-      />
-      {showCreateModal && clickedPosition && (
+      <MapContainer
+        center={[center.lat, center.lng]}
+        zoom={13}
+        style={{ height: "100%", width: "100%" }}
+        ref={mapRef}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapUpdater center={currentLocation} />
+        <MapClickHandler onMapClick={handleMapClick} />
+
+        {currentLocation && (
+          <Marker position={[currentLocation.lat, currentLocation.lng]}>
+            <Popup>You are here</Popup>
+          </Marker>
+        )}
+
+        {routePoints.length > 1 && (
+          <Polyline
+            positions={routePoints.map((p) => [p.lat, p.lng])}
+            color="blue"
+            weight={4}
+            opacity={0.7}
+          />
+        )}
+
+        {pins.map((pin, index) => (
+          <Marker
+            key={index}
+            position={[pin.lat, pin.lng]}
+            icon={pinIcon}
+            eventHandlers={{
+              click: () => handlePinClick(pin, index),
+            }}
+          >
+            <Popup>
+              <div className="text-center">
+                <strong>{pin.title}</strong>
+                {pin.description && <p className="text-sm">{pin.description}</p>}
+                {pin.image && (
+                  <img
+                    src={pin.image}
+                    alt={pin.title}
+                    className="w-32 h-32 object-cover mt-2 rounded"
+                  />
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+      {showPinModal && selectedPin && !onPinClick && (
         <PinModal
-          lat={clickedPosition.lat}
-          lng={clickedPosition.lng}
-          title={formData.title}
-          description={formData.description}
-          image={formData.image}
-          readOnly={false}
-          onChange={setFormData}
+          lat={selectedPin.lat}
+          lng={selectedPin.lng}
+          title={selectedPin.title}
+          description={selectedPin.description}
+          image={selectedPin.image}
+          readOnly={readOnly}
+          onChange={handlePinChange}
           onClose={() => {
-            setShowCreateModal(false);
-            setClickedPosition(null);
+            setShowPinModal(false);
+            setSelectedPin(null);
+            setEditingIndex(null);
           }}
-          onSave={handleCreateMemory}
-        />
-      )}
-      {selectedMemory && !editingMemory && (
-        <PinModal
-          lat={selectedMemory.lat}
-          lng={selectedMemory.lng}
-          title={selectedMemory.title}
-          description={selectedMemory.description}
-          image={selectedMemory.image}
-          readOnly={true}
-          onChange={() => {}}
-          onClose={() => setSelectedMemory(null)}
-          onSave={() => {}}
-          onEdit={() => startEditing(selectedMemory)}
-        />
-      )}
-      {editingMemory && (
-        <PinModal
-          lat={editingMemory.lat}
-          lng={editingMemory.lng}
-          title={formData.title}
-          description={formData.description}
-          image={formData.image}
-          readOnly={false}
-          onChange={setFormData}
-          onClose={() => setEditingMemory(null)}
-          onSave={handleEditMemory}
+          onSave={handleSavePin}
+          onEdit={onPinsChange ? handleEdit : undefined}
+          onDelete={onPinsChange && editingIndex !== null ? handleDeletePin : undefined}
         />
       )}
     </>

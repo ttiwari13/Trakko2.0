@@ -8,14 +8,19 @@ generator client {
 }
 
 model User {
-  id           String       @id @default(uuid())
-  name         String?
-  username     String       @unique
-  email        String       @unique
-  password     String
-  createdAt    DateTime     @default(now())
-  createdPaths Path[]
-  pathMembers  PathMember[]
+  id        String   @id @default(uuid())
+  name      String?
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  createdPaths Path[] // existing
+  pathMembers  PathMember[] // existing
+
+  // New relations for routes
+  createdRoutes PathRoute[] // routes user created
+  routeNotes    PathRouteNote[] // notes user added
 }
 
 model Path {
@@ -26,7 +31,11 @@ model Path {
 
   creator User         @relation(fields: [creatorId], references: [id])
   members PathMember[]
-  invites   PathInvite[] 
+  invites PathInvite[]
+
+  // New relation
+  routes PathRoute[] // all routes under this path
+
   @@index([creatorId])
 }
 
@@ -42,6 +51,7 @@ model PathMember {
   @@unique([pathId, userId])
   @@index([userId])
 }
+
 model PathInvite {
   id        String   @id @default(uuid())
   pathId    String
@@ -53,4 +63,44 @@ model PathInvite {
   path Path @relation(fields: [pathId], references: [id])
 
   @@index([pathId])
+}
+
+model PathRoute {
+  id              String   @id @default(uuid())
+  pathId          String
+  creatorId       String
+  title           String
+  encodedPolyline String // compressed route points
+  distance        Float // in meters
+  duration        Int // in seconds
+  activityType    String? // walking, cycling, etc.
+  isFavourite     Boolean  @default(false) 
+  pins             String?  @db.Text 
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  path    Path            @relation(fields: [pathId], references: [id])
+  creator User            @relation(fields: [creatorId], references: [id])
+  notes   PathRouteNote[]
+
+  @@index([pathId])
+  @@index([creatorId])
+  @@index([isFavourite])
+}
+
+model PathRouteNote {
+  id          String   @id @default(uuid())
+  pathRouteId String
+  userId      String
+  pointIndex  Int // index in polyline
+  noteText    String?
+  photoUrl    String?
+  createdAt   DateTime @default(now())
+
+  pathRoute PathRoute @relation(fields: [pathRouteId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([pathRouteId])
+  @@index([userId])
 }

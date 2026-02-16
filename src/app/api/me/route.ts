@@ -1,28 +1,28 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const cookieStore = cookies();
-    const token = (await cookieStore).get("session")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token");
 
     if (!token) {
       return NextResponse.json({ user: null });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as { userId: string };
+    const decoded = jwt.verify(token.value, process.env.JWT_SECRET!) as {
+      userId: string;
+    };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
+      select: { 
+        id: true, 
+        username: true, 
+        email: true, 
+        name: true 
       },
     });
 
@@ -31,7 +31,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ user });
-  } catch (err) {
+  } catch (error) {
+    console.error("Auth check error:", error);
     return NextResponse.json({ user: null });
   }
 }

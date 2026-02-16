@@ -1,127 +1,75 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type LatLng = {
-  lat: number;
-  lng: number;
-};
-
-type SavedRouteType = {
-  id: string;
-  name: string;
-  date: string;
-  points: LatLng[];
-};
+import { useState } from "react";
+import { Save } from "lucide-react";
+import type { PinData } from "@/app/page";
 
 type Props = {
-  routePoints: LatLng[];
+  routePoints: { lat: number; lng: number }[];
+  pins?: PinData[];
+  onSaveSuccess: () => void;
 };
 
-export default function SaveRoute({ routePoints }: Props) {
-  const [savedRoutes, setSavedRoutes] = useState<SavedRouteType[]>([]);
-  const [routeName, setRouteName] = useState("");
+export default function SaveRoute({ routePoints, pins = [], onSaveSuccess }: Props) {
+  const [title, setTitle] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Load from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("trakko_saved_routes");
-    if (stored) {
-      setSavedRoutes(JSON.parse(stored));
-    }
-  }, []);
-  useEffect(() => {
-    localStorage.setItem(
-      "trakko_saved_routes",
-      JSON.stringify(savedRoutes)
-    );
-  }, [savedRoutes]);
-
-  const handleSaveRoute = () => {
-    if (!routePoints || routePoints.length === 0) {
-      alert("No route to save!");
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert("Please enter a route title");
       return;
     }
 
-    if (!routeName.trim()) {
-      alert("Please enter a route name.");
-      return;
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/routes/save", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title,
+          routePoints: routePoints,
+          activityType: "walking",
+          pins: pins, // Include pins in the save
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save");
+      }
+
+      alert("Route saved successfully!");
+      setTitle("");
+      onSaveSuccess();
+    } catch (err: any) {
+      console.error("Save error:", err);
+      alert(err.message || "Failed to save route");
+    } finally {
+      setSaving(false);
     }
-
-    const newRoute: SavedRouteType = {
-      id: crypto.randomUUID(),
-      name: routeName,
-      date: new Date().toLocaleString(),
-      points: routePoints,
-    };
-
-    setSavedRoutes((prev) => [...prev, newRoute]);
-    setRouteName("");
-  };
-
-  const handleDelete = (id: string) => {
-    setSavedRoutes((prev) =>
-      prev.filter((route) => route.id !== id)
-    );
   };
 
   return (
-    <div className="p-10 h-full overflow-y-auto bg-black text-white">
-      <h2 className="text-3xl font-bold mb-6">Saved Routes</h2>
-
-      {/* Save Section */}
-      <div className="bg-neutral-900 p-6 rounded-xl mb-8">
-        <h3 className="text-lg mb-4">Save Current Route</h3>
-
-        <input
-          type="text"
-          placeholder="Enter route name"
-          value={routeName}
-          onChange={(e) => setRouteName(e.target.value)}
-          className="w-full p-2 mb-4 rounded bg-neutral-800 text-white outline-none"
-        />
-
-        <button
-          onClick={handleSaveRoute}
-          className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded"
-        >
-          Save Route
-        </button>
-      </div>
-
-      {/* Saved Routes List */}
-      <div className="space-y-4">
-        {savedRoutes.length === 0 && (
-          <p className="text-neutral-400">
-            No routes saved yet.
-          </p>
-        )}
-
-        {savedRoutes.map((route) => (
-          <div
-            key={route.id}
-            className="bg-neutral-900 p-4 rounded-lg flex justify-between items-center"
-          >
-            <div>
-              <h4 className="text-lg font-semibold">
-                {route.name}
-              </h4>
-              <p className="text-sm text-neutral-400">
-                {route.date}
-              </p>
-              <p className="text-sm text-neutral-500">
-                {route.points.length} points
-              </p>
-            </div>
-
-            <button
-              onClick={() => handleDelete(route.id)}
-              className="text-red-400 text-sm"
-            >
-              Delete
-            </button>
-          </div>
-        ))}
-      </div>
+    <div className="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-4">
+      <input
+        type="text"
+        placeholder="Route name (e.g., Morning jog)"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        disabled={saving}
+      />
+      <button
+        onClick={handleSave}
+        disabled={saving || !title.trim()}
+        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+      >
+        <Save size={18} />
+        {saving ? "Saving..." : "Save Route"}
+      </button>
     </div>
   );
 }

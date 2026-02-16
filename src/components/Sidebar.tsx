@@ -45,16 +45,25 @@ export default function Sidebar({
       setOpen((prev) => !prev);
     }
   };
-
-  const handleLogout = async () => {
-    await fetch("/api/logout", {
+const handleLogout = async () => {
+  try {
+    const res = await fetch("/api/logout", {
       method: "POST",
       credentials: "include",
     });
 
-    onLogout();
-    setOpen(false);
-  };
+    if (res.ok) {
+      onLogout();
+      setOpen(false);
+      console.log("Logged out successfully");
+    } else {
+      console.error("Logout failed");
+    }
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
+};
+
 
   return (
     <aside className="relative z-[1000] w-20 bg-white border-r border-gray-200 flex flex-col items-center py-6 gap-8 shadow-sm">
