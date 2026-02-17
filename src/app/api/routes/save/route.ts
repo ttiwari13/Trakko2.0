@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const decoded = verify(token, JWT_SECRET) as { userId: string };
     const body = await req.json();
     
-    const { title, routePoints, activityType, isFavourite } = body;
+    const { title, routePoints, activityType, isFavourite,pins  } = body;
 
     if (!title || !routePoints || !Array.isArray(routePoints)) {
       return NextResponse.json(
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
         duration,
         activityType: activityType || "walking",
         isFavourite: isFavourite || false, 
+        pins: JSON.stringify(pins || []), 
       },
     });
 

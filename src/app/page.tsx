@@ -6,7 +6,6 @@ import Sidebar from "@/components/Sidebar";
 import BottomBar from "@/components/BottomBar";
 import SignupModal from "@/components/SignupModal";
 import LoginModal from "@/components/LoginModal";
-import SaveRoute from "@/components/SaveRoute";
 import ShowSavedRoute from "@/components/ShowSavedRoute";
 import FavouriteRoutes from "@/components/FavouriteRoutes";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
@@ -62,7 +61,6 @@ export default function Page() {
 
   const startRoute = () => {
     engine.start();
-    setCurrentPins([]); 
   };
 
   const stopRoute = () => {
@@ -73,17 +71,21 @@ export default function Page() {
     setUser(loggedInUser);
     setShowLogin(false);
   };
+
   const handleRouteSaved = () => {
-    console.log("Route saved! Switching to saved view...");
-    setActiveView("saved");
+    console.log("Route saved successfully!");
     setRefreshSavedRoutes(prev => prev + 1);
-    setCurrentPins([]); 
   };
+
   const handleRouteFavourited = () => {
-    console.log("Route favourited! Switching to favourites view...");
-    setActiveView("favourites");
+    console.log("Route favourited successfully!");
     setRefreshFavourites(prev => prev + 1);
+  };
+
+  const handleNewRoute = () => {
+    engine.stop(); 
     setCurrentPins([]); 
+    engine.start(); 
   };
 
   return (
@@ -96,6 +98,7 @@ export default function Page() {
         onLogout={() => setUser(null)}
       />
       <main className="relative flex-1 h-full overflow-hidden">
+        {/* Only render MapClient when activeView is "map" */}
         {activeView === "map" && (
           <>
             <div className="absolute inset-0">
@@ -106,18 +109,6 @@ export default function Page() {
                 onPinsChange={setCurrentPins}
               />
             </div>
-
-            {/* Save Route Component - shows on map when tracking */}
-            {engine.routePoints.length > 0 && (
-              <div className="absolute top-6 left-6 right-6 z-[500] max-w-4xl mx-auto">
-                <SaveRoute 
-                  routePoints={engine.routePoints}
-                  pins={currentPins}
-                  onSaveSuccess={handleRouteSaved}
-                />
-              </div>
-            )}
-
             <BottomBar
               isAuthenticated={isAuthenticated}
               onRequireAuth={() => setShowLogin(true)}

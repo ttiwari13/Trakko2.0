@@ -6,17 +6,23 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import PinModal, { type PinFormData } from "./PinModal";
 import type { PinData } from "@/app/page";
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
-const pinIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/684/684908.png",
+
+const pinIcon = new L.DivIcon({
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ef4444" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+    <circle cx="12" cy="10" r="3" fill="white" stroke="#ef4444"/>
+  </svg>`,
   iconSize: [32, 32],
   iconAnchor: [16, 32],
   popupAnchor: [0, -32],
+  className: "",
 });
 
 type Props = {
@@ -81,6 +87,7 @@ export default function MapClient({
     setReadOnly(false);
     setShowPinModal(true);
   };
+
   const handlePinClick = (pin: PinData, index: number) => {
     if (onPinClick) {
       onPinClick(pin);
@@ -91,7 +98,6 @@ export default function MapClient({
     setReadOnly(!onPinsChange); 
     setShowPinModal(true);
   };
-
   const handlePinChange = (data: PinFormData) => {
     if (selectedPin) {
       setSelectedPin({
@@ -106,7 +112,6 @@ export default function MapClient({
       alert("Please enter a title for the pin");
       return;
     }
-
     if (editingIndex !== null) {
       const newPins = [...pins];
       newPins[editingIndex] = selectedPin;
@@ -157,7 +162,7 @@ export default function MapClient({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapUpdater center={currentLocation} />
-        <MapClickHandler onMapClick={handleMapClick} />
+        {onPinsChange && <MapClickHandler onMapClick={handleMapClick} />}
 
         {currentLocation && (
           <Marker position={[currentLocation.lat, currentLocation.lng]}>

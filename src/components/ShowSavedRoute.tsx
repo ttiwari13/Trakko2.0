@@ -68,16 +68,11 @@ export default function ShowSavedRoute({ refreshTrigger }: Props) {
       });
       const data = await res.json();
       const transformedRoutes = (data.data || data.routes || data || []).map((route: any) => {
-        console.log("\n🔍 Processing route:", route.id);
-        console.log("🔍 Route title:", route.title);
-        
         let routePoints = [];
         let pins = [];
-        
         try {
           if (typeof route.encodedPolyline === 'string') {
             routePoints = JSON.parse(route.encodedPolyline);
-            
           } else if (Array.isArray(route.encodedPolyline)) {
             routePoints = route.encodedPolyline;
            
@@ -203,7 +198,7 @@ export default function ShowSavedRoute({ refreshTrigger }: Props) {
     setViewingRoute(route);
   };
   const handlePinClick = (pin: PinData) => {
-    console.log("📍 Pin clicked:", pin);
+    
     setViewingPin(pin);
   };
 
@@ -387,11 +382,11 @@ export default function ShowSavedRoute({ refreshTrigger }: Props) {
                 </p>
               </div>
               <button
-                onClick={() => setViewingRoute(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
-                <X size={24} />
-              </button>
+  onClick={() => { setViewingRoute(null); setViewingPin(null); }}
+  className="p-2 hover:bg-gray-100 rounded-lg transition"
+>
+  <X size={24} />
+</button>
             </div>
             <div className="flex-1 relative">
               <MapClient
@@ -408,29 +403,31 @@ export default function ShowSavedRoute({ refreshTrigger }: Props) {
                   <span>{formatDate(viewingRoute.createdAt)}</span>
                 </div>
                 <button
-                  onClick={() => setViewingRoute(null)}
-                  className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition font-medium"
-                >
-                  Close
-                </button>
+  onClick={() => { setViewingRoute(null); setViewingPin(null); }}
+  className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition font-medium"
+>
+  Close
+</button>
               </div>
             </div>
           </div>
         </div>
       )}
       {viewingPin && (
-        <PinModal
-          lat={viewingPin.lat}
-          lng={viewingPin.lng}
-          title={viewingPin.title}
-          description={viewingPin.description}
-          image={viewingPin.image}
-          readOnly={true}
-          onChange={() => {}} 
-          onClose={() => setViewingPin(null)}
-          onSave={() => {}} 
-        />
-      )}
+  <div className="z-[10000]"> 
+    <PinModal
+      lat={viewingPin.lat}
+      lng={viewingPin.lng}
+      title={viewingPin.title}
+      description={viewingPin.description}
+      image={viewingPin.image}
+      readOnly={true}
+      onChange={() => {}} 
+      onClose={() => setViewingPin(null)}
+      onSave={() => {}} 
+    />
+  </div>
+)}
     </>
   );
 }
