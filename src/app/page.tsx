@@ -10,10 +10,7 @@ import ShowSavedRoute from "@/components/ShowSavedRoute";
 import FavouriteRoutes from "@/components/FavouriteRoutes";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 
-const MapClient = dynamic(
-  () => import("@/components/MapClient"),
-  { ssr: false }
-);
+const MapClient = dynamic(() => import("@/components/MapClient"), { ssr: false });
 
 type ViewType = "map" | "saved" | "favourites";
 
@@ -32,7 +29,6 @@ export default function Page() {
   const [showLogin, setShowLogin] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>("map");
   const [refreshSavedRoutes, setRefreshSavedRoutes] = useState(0);
-  const [refreshFavourites, setRefreshFavourites] = useState(0);
   const [currentPins, setCurrentPins] = useState<PinData[]>([]);
 
   const engine = useLiveLocation();
@@ -40,52 +36,23 @@ export default function Page() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/me", {
-          credentials: "include",
-        });
+        const res = await fetch("/api/me", { credentials: "include" });
         const data = await res.json();
-        if (data.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
+        setUser(data.user || null);
+      } catch {
         setUser(null);
       }
     };
     checkAuth();
-  }, []); 
+  }, []);
 
-  const isAuthenticated = !!user;
-
-  const startRoute = () => {
-    engine.start();
-  };
-
-  const stopRoute = () => {
-    engine.stop();
-  };
-
-  const handleLoginSuccess = async (loggedInUser: any) => {
+  const handleLoginSuccess = (loggedInUser: any) => {
     setUser(loggedInUser);
     setShowLogin(false);
   };
 
   const handleRouteSaved = () => {
-    console.log("Route saved successfully!");
     setRefreshSavedRoutes(prev => prev + 1);
-  };
-
-  const handleRouteFavourited = () => {
-    console.log("Route favourited successfully!");
-    setRefreshFavourites(prev => prev + 1);
-  };
-
-  const handleNewRoute = () => {
-    engine.stop(); 
-    setCurrentPins([]); 
-    engine.start(); 
   };
 
   return (
@@ -98,7 +65,6 @@ export default function Page() {
         onLogout={() => setUser(null)}
       />
       <main className="relative flex-1 h-full overflow-hidden">
-        {/* Only render MapClient when activeView is "map" */}
         {activeView === "map" && (
           <>
             <div className="absolute inset-0">
@@ -110,55 +76,41 @@ export default function Page() {
               />
             </div>
             <BottomBar
-              isAuthenticated={isAuthenticated}
+              isAuthenticated={!!user}
               onRequireAuth={() => setShowLogin(true)}
-              onStart={startRoute}
-              onStop={stopRoute}
+              onStart={() => engine.start()}
+              onStop={() => engine.stop()}
               routePoints={engine.routePoints}
               pins={currentPins}
               onSaveRoute={handleRouteSaved}
-              onFavouriteRoute={handleRouteFavourited}
             />
           </>
         )}
 
         {activeView === "saved" && (
           <div className="h-full overflow-auto">
-            <ShowSavedRoute 
-              refreshTrigger={refreshSavedRoutes} 
-            />
+            <ShowSavedRoute refreshTrigger={refreshSavedRoutes} />
           </div>
         )}
 
         {activeView === "favourites" && (
           <div className="h-full overflow-auto">
-            <FavouriteRoutes 
-              refreshTrigger={refreshFavourites}
-            />
+            <FavouriteRoutes />
           </div>
         )}
 
         {showSignup && (
           <SignupModal
             onClose={() => setShowSignup(false)}
-            onSuccess={() => {
-              setShowSignup(false);
-              setShowLogin(true);
-            }}
-            onLoginClick={() => {
-              setShowSignup(false);
-              setShowLogin(true);
-            }}
+            onSuccess={() => { setShowSignup(false); setShowLogin(true); }}
+            onLoginClick={() => { setShowSignup(false); setShowLogin(true); }}
           />
         )}
 
         {showLogin && (
           <LoginModal
             onClose={() => setShowLogin(false)}
-            onSignupClick={() => {
-              setShowLogin(false);
-              setShowSignup(true);
-            }}
+            onSignupClick={() => { setShowLogin(false); setShowSignup(true); }}
             onSuccess={handleLoginSuccess}
           />
         )}
