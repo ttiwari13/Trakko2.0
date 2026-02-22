@@ -31,7 +31,7 @@ export default function SaveRoute({ routePoints, pins = [], onSaveSuccess }: Pro
           title: title,
           routePoints: routePoints,
           activityType: "walking",
-          pins: pins, // Include pins in the save
+          pins: pins, 
         }),
       });
 
@@ -45,7 +45,6 @@ export default function SaveRoute({ routePoints, pins = [], onSaveSuccess }: Pro
       setTitle("");
       onSaveSuccess();
     } catch (err: any) {
-      console.error("Save error:", err);
       alert(err.message || "Failed to save route");
     } finally {
       setSaving(false);

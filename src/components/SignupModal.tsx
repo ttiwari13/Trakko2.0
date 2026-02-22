@@ -46,7 +46,6 @@ export default function SignupModal({
       }
       onSuccess();
     } catch (err) {
-      console.error("Signup failed:", err);
       alert("Something went wrong");
     }
   };

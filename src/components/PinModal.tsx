@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Trash2, X, Pencil, Check } from "lucide-react";
+import React, { useState } from "react";
+import { Trash2, X, Pencil, Check, Loader2 } from "lucide-react";
 
 export type PinFormData = {
   title: string;
@@ -23,6 +23,9 @@ type Props = {
   onDelete?: () => void;
 };
 
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+
 export default function PinModal({
   title,
   description,
@@ -34,15 +37,41 @@ export default function PinModal({
   onEdit,
   onDelete,
 }: Props) {
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (readOnly) return;
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      onChange({ title, description, image: reader.result as string });
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image must be under 5MB");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+      formData.append("folder", "trakko/pins");
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        { method: "POST", body: formData }
+      );
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      onChange({ title, description, image: data.secure_url });
+    } catch (err) {
+      setUploadError("Failed to upload image. Try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -75,7 +104,7 @@ export default function PinModal({
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
 
-          {/* Image — full width, natural aspect ratio, max height capped */}
+          {/* Image preview */}
           {image && (
             <div className="relative rounded-xl overflow-hidden bg-gray-100">
               <img
@@ -134,13 +163,33 @@ export default function PinModal({
               <label className="block text-xs font-medium text-gray-500 mb-1.5">
                 Image (optional)
               </label>
-              <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
-                <div className="text-center">
-                  <p className="text-sm text-gray-400">Click to upload</p>
-                  <p className="text-xs text-gray-300 mt-0.5">PNG, JPG, GIF</p>
+
+              {uploading ? (
+                <div className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Loader2 size={20} className="animate-spin text-gray-400" />
+                    <p className="text-xs text-gray-400">Uploading...</p>
+                  </div>
                 </div>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </label>
+              ) : (
+                <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-400">Click to upload</p>
+                    <p className="text-xs text-gray-300 mt-0.5">PNG, JPG, GIF · max 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
+              )}
+
+              {uploadError && (
+                <p className="text-xs text-red-500 mt-1.5">{uploadError}</p>
+              )}
             </div>
           )}
         </div>
@@ -167,7 +216,8 @@ export default function PinModal({
           {!readOnly && (
             <button
               onClick={onSave}
-              className="flex-1 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+              disabled={uploading}
+              className="flex-1 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40"
             >
               <Check size={13} />
               Save

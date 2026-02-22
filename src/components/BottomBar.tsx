@@ -83,29 +83,40 @@ export default function BottomBar({
   };
 
   const handleSaveRoute = async () => {
-    if (!saveTitle.trim()) { alert("Please enter a route title"); return; }
-    setSaving(true);
-    try {
-      const res = await fetch("/api/routes/save", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: saveTitle, routePoints, activityType: "walking", pins }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save");
-      alert("Route saved successfully!");
+  if (!saveTitle.trim()) { alert("Please enter a route title"); return; }
+  setSaving(true);
+  try {
+    const res = await fetch("/api/routes/save", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: saveTitle, routePoints, activityType: "walking", pins }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to save");
+    alert("Route saved successfully!");
+    setShowSaveModal(false);
+    setSaveTitle("");
+    setActive(null);
+    if (onSaveRoute) onSaveRoute();
+    if (onClearRoute) onClearRoute();
+  } catch (err: any) {
+    if (!navigator.onLine) {
+      localStorage.setItem("trakko_pending_save", JSON.stringify({
+        title: saveTitle,
+        routePoints,
+        activityType: "walking",
+        pins,
+      }));
+      alert("You're offline! Your route is safe and will auto-save when you reconnect.");
       setShowSaveModal(false);
-      setSaveTitle("");
-      setActive(null);
-      if (onSaveRoute) onSaveRoute();
-      if (onClearRoute) onClearRoute(); 
-    } catch (err: any) {
+    } else {
       alert(err.message || "Failed to save route");
-    } finally {
-      setSaving(false);
     }
-  };
+  } finally {
+    setSaving(false);
+  }
+};
 
   useEffect(() => {
     if (!isAuthenticated) return;

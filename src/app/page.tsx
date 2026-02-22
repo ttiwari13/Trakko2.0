@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Sidebar from "@/components/Sidebar";
 import BottomBar from "@/components/BottomBar";
@@ -65,6 +65,11 @@ export default function Page() {
 
   const engine = useLiveLocation();
 
+  // Stable refs to avoid stale closures in event listeners
+  const clearRouteRef = useRef(engine.clearRoute);
+  const setCurrentPinsRef = useRef(setCurrentPins);
+  useEffect(() => { clearRouteRef.current = engine.clearRoute; }, [engine.clearRoute]);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -93,9 +98,37 @@ export default function Page() {
     setShowLogin(false);
   };
 
-  const handleRouteSaved = () => {
+  const handleRouteSaved = useCallback(() => {
     setRefreshSavedRoutes((prev) => prev + 1);
-  };
+  }, []);
+
+  // Auto-save pending route when internet comes back
+  useEffect(() => {
+    const handleOnline = async () => {
+      const pending = localStorage.getItem("trakko_pending_save");
+      if (!pending) return;
+
+      try {
+        const payload = JSON.parse(pending);
+        const res = await fetch("/api/routes/save", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          localStorage.removeItem("trakko_pending_save");
+          handleRouteSaved();
+          clearRouteRef.current();       // stable ref — no stale closure
+          setCurrentPinsRef.current([]); // stable ref
+          alert("Back online! Your route was saved automatically.");
+        }
+      } catch {}
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [handleRouteSaved]); // handleRouteSaved is stable via useCallback
 
   return (
     <div className="h-[100dvh] w-screen flex flex-col md:flex-row bg-white text-black overflow-hidden">
@@ -113,6 +146,13 @@ export default function Page() {
 
         {activeView === "map" && (
           <>
+            {/* Offline banner */}
+            {!engine.isOnline && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg whitespace-nowrap">
+                📡 You're offline — tracking still active, save when reconnected
+              </div>
+            )}
+
             <div className="absolute inset-0">
               <MapClient
                 currentLocation={engine.currentLocation}
@@ -122,12 +162,6 @@ export default function Page() {
               />
             </div>
 
-            {/* 
-              Single BottomBar instance.
-              BottomBar internally switches between:
-              - desktop: horizontal pill (hidden sm:flex)
-              - mobile: radial FAB (sm:hidden), fixed bottom-right
-            */}
             <div className="fixed bottom-20 right-4 z-30 sm:static sm:absolute sm:bottom-6 sm:right-auto sm:left-0 sm:right-0 sm:flex sm:justify-center sm:z-10">
               <BottomBar
                 isAuthenticated={!!user}
@@ -137,10 +171,10 @@ export default function Page() {
                 routePoints={engine.routePoints}
                 pins={currentPins}
                 onSaveRoute={handleRouteSaved}
-onClearRoute={() => {
-  setCurrentPins([]);
- engine.clearRoute(); 
-}}
+                onClearRoute={() => {
+                  setCurrentPins([]);
+                  engine.clearRoute();
+                }}
               />
             </div>
           </>
