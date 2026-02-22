@@ -21,7 +21,6 @@ function getPerpendicularDistance(
 
   return numerator / denominator;
 }
-
 export function simplify(
   points: LatLng[],
   epsilon: number
@@ -30,7 +29,6 @@ export function simplify(
 
   let maxDist = 0;
   let index = 0;
-
   for (let i = 1; i < points.length - 1; i++) {
     const dist = getPerpendicularDistance(
       points[i],
@@ -46,7 +44,6 @@ export function simplify(
   if (maxDist > epsilon) {
     const left = simplify(points.slice(0, index + 1), epsilon);
     const right = simplify(points.slice(index), epsilon);
-
     return [...left.slice(0, -1), ...right];
   }
 

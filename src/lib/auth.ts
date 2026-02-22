@@ -10,15 +10,12 @@ export async function getUserFromSession() {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-    console.log("Decoded:", decoded);  
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: { id: true, username: true },
     });
-    console.log("User found:", user); 
     return user;
-  } catch (e) {
-    console.error("JWT error:", e);  
+  } catch (e) { 
     return null;
   }
 }

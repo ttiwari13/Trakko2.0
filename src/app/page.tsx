@@ -137,6 +137,10 @@ export default function Page() {
                 routePoints={engine.routePoints}
                 pins={currentPins}
                 onSaveRoute={handleRouteSaved}
+onClearRoute={() => {
+  setCurrentPins([]);
+ engine.clearRoute(); 
+}}
               />
             </div>
           </>

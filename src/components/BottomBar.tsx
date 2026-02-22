@@ -24,6 +24,7 @@ type BottomBarProps = {
   routePoints: { lat: number; lng: number }[];
   pins?: PinData[];
   onSaveRoute?: () => void;
+  onClearRoute?: () => void;
 };
 
 const BUTTONS = [
@@ -49,6 +50,7 @@ export default function BottomBar({
   routePoints,
   pins = [],
   onSaveRoute,
+   onClearRoute, 
 }: BottomBarProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<ActiveBtn>(null);
@@ -97,6 +99,7 @@ export default function BottomBar({
       setSaveTitle("");
       setActive(null);
       if (onSaveRoute) onSaveRoute();
+      if (onClearRoute) onClearRoute(); 
     } catch (err: any) {
       alert(err.message || "Failed to save route");
     } finally {
