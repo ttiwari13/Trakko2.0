@@ -71,7 +71,7 @@ const handleLogout = async () => {
       <div className="relative">
         <button
           onClick={handleAvatarClick}
-          className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-white font-bold text-lg flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all duration-200 ring-2 ring-blue-100"
+          className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-900 to-gray-900 text-white font-bold text-lg flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all duration-200 ring-2 ring-blue-100"
           title={user ? `@${user.username}` : "Login"}
         >
           {firstLetter ?? <User size={20} />}
@@ -109,7 +109,7 @@ const handleLogout = async () => {
           onClick={() => onChangeView("map")}
           className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
             activeView === "map"
-              ? "bg-blue-100 text-blue-600"
+              ? "bg-blue-100 text-gray-900"
               : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
           }`}
           title="Map"
@@ -121,7 +121,7 @@ const handleLogout = async () => {
           onClick={() => onChangeView("saved")}
           className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
             activeView === "saved"
-              ? "bg-blue-100 text-blue-600"
+              ? "bg-blue-100 text-gray-900"
               : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
           }`}
           title="Saved Routes"

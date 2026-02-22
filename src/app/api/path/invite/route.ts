@@ -7,32 +7,23 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export async function POST(req: Request) {
-  // 1. Auth check
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   try {
     verify(token, JWT_SECRET);
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
-
-  // 2. Validate body
-  const { email, inviteLink } = await req.json();
-
+  const {email, inviteLink } = await req.json();
   if (!email || !inviteLink) {
     return NextResponse.json({ error: "Missing email or invite link" }, { status: 400 });
   }
-
   if (!email.includes("@")) {
     return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
   }
-
-  // 3. Send email
   try {
     await resend.emails.send({
       from: "Trakko <onboarding@resend.dev>",
@@ -63,10 +54,8 @@ export async function POST(req: Request) {
         </div>
       `,
     });
-
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Email send failed:", err);
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 }

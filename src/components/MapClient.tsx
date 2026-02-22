@@ -30,25 +30,32 @@ type Props = {
   routePoints: { lat: number; lng: number }[];
   pins?: PinData[];
   onPinsChange?: (pins: PinData[]) => void;
-  onPinClick?: (pin: PinData) => void; 
+  onPinClick?: (pin: PinData) => void;
 };
+
+// ✅ Safely captures the map instance after it's fully initialized
+function MapRefSetter({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) {
+  const map = useMap();
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map, mapRef]);
+  return null;
+}
 
 function MapUpdater({ center }: { center: { lat: number; lng: number } | null }) {
   const map = useMap();
-
   useEffect(() => {
     if (center) {
       map.setView([center.lat, center.lng], map.getZoom());
     }
   }, [center, map]);
-
   return null;
 }
 
-function MapClickHandler({ 
-  onMapClick 
-}: { 
-  onMapClick: (e: L.LeafletMouseEvent) => void 
+function MapClickHandler({
+  onMapClick,
+}: {
+  onMapClick: (e: L.LeafletMouseEvent) => void;
 }) {
   useMapEvents({
     click: onMapClick,
@@ -56,12 +63,12 @@ function MapClickHandler({
   return null;
 }
 
-export default function MapClient({ 
-  currentLocation, 
-  routePoints, 
-  pins = [], 
+export default function MapClient({
+  currentLocation,
+  routePoints,
+  pins = [],
   onPinsChange,
-  onPinClick 
+  onPinClick,
 }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -69,20 +76,14 @@ export default function MapClient({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [readOnly, setReadOnly] = useState(false);
 
-  const defaultCenter = { lat: 28.6139, lng: 77.2090 }; 
+  const defaultCenter = { lat: 28.6139, lng: 77.209 };
   const center = currentLocation || defaultCenter;
 
   const handleMapClick = (e: L.LeafletMouseEvent) => {
     if (!onPinsChange) return;
     const { lat, lng } = e.latlng;
     const pointIndex = routePoints.length;
-    setSelectedPin({
-      lat,
-      lng,
-      title: "",
-      description: "",
-      pointIndex,
-    });
+    setSelectedPin({ lat, lng, title: "", description: "", pointIndex });
     setEditingIndex(null);
     setReadOnly(false);
     setShowPinModal(true);
@@ -95,17 +96,16 @@ export default function MapClient({
     }
     setSelectedPin(pin);
     setEditingIndex(index);
-    setReadOnly(!onPinsChange); 
+    setReadOnly(!onPinsChange);
     setShowPinModal(true);
   };
+
   const handlePinChange = (data: PinFormData) => {
     if (selectedPin) {
-      setSelectedPin({
-        ...selectedPin,
-        ...data,
-      });
+      setSelectedPin({ ...selectedPin, ...data });
     }
   };
+
   const handleSavePin = () => {
     if (!selectedPin || !onPinsChange) return;
     if (!selectedPin.title.trim()) {
@@ -119,7 +119,6 @@ export default function MapClient({
     } else {
       onPinsChange([...pins, selectedPin]);
     }
-
     setShowPinModal(false);
     setSelectedPin(null);
     setEditingIndex(null);
@@ -131,17 +130,15 @@ export default function MapClient({
 
   const handleDeletePin = () => {
     if (!onPinsChange || editingIndex === null) return;
-    
     if (!confirm("Delete this pin?")) return;
-
     const newPins = pins.filter((_, i) => i !== editingIndex);
     onPinsChange(newPins);
-    
     setShowPinModal(false);
     setSelectedPin(null);
     setEditingIndex(null);
   };
 
+  // ✅ Uses mapRef safely — only runs after MapRefSetter has populated it
   useEffect(() => {
     if (mapRef.current && routePoints.length > 0) {
       const bounds = L.latLngBounds(routePoints.map((p) => [p.lat, p.lng]));
@@ -155,12 +152,15 @@ export default function MapClient({
         center={[center.lat, center.lng]}
         zoom={13}
         style={{ height: "100%", width: "100%" }}
-        ref={mapRef}
+        // ✅ No ref prop here — react-leaflet v4 doesn't support it reliably
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {/* ✅ This safely captures the map instance after mount */}
+        <MapRefSetter mapRef={mapRef} />
         <MapUpdater center={currentLocation} />
         {onPinsChange && <MapClickHandler onMapClick={handleMapClick} />}
 
@@ -204,6 +204,7 @@ export default function MapClient({
           </Marker>
         ))}
       </MapContainer>
+
       {showPinModal && selectedPin && !onPinClick && (
         <PinModal
           lat={selectedPin.lat}

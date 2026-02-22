@@ -1,5 +1,3 @@
-
-
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verify } from "jsonwebtoken";
@@ -11,11 +9,9 @@ export async function GET(req: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const decoded = verify(token, JWT_SECRET) as { userId: string };
     const routes = await prisma.pathRoute.findMany({
       where: {

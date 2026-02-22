@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, X, Pencil, Check } from "lucide-react";
 
 export type PinFormData = {
   title: string;
@@ -34,126 +34,142 @@ export default function PinModal({
   onEdit,
   onDelete,
 }: Props) {
-  const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (readOnly) return;
-
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onloadend = () => {
-      onChange({
-        title,
-        description,
-        image: reader.result as string,
-      });
+      onChange({ title, description, image: reader.result as string });
     };
     reader.readAsDataURL(file);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[2000]">
-      <div className="bg-white p-6 rounded-xl w-[400px] max-w-[90vw] space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">
-            {readOnly ? "View Memory" : "Add / Edit Memory"}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <h2 className="text-base font-semibold text-gray-900">
+            {readOnly ? "Memory" : "Add Memory"}
           </h2>
-          {readOnly && onDelete && (
+          <div className="flex items-center gap-1">
+            {readOnly && onDelete && (
+              <button
+                onClick={onDelete}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
             <button
-              onClick={onDelete}
-              className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition"
-              title="Delete pin"
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
             >
-              <Trash2 size={18} />
+              <X size={15} />
             </button>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+
+          {/* Image — full width, natural aspect ratio, max height capped */}
+          {image && (
+            <div className="relative rounded-xl overflow-hidden bg-gray-100">
+              <img
+                src={image}
+                alt={title || "Memory"}
+                className="w-full object-contain max-h-64"
+                style={{ display: "block" }}
+              />
+              {!readOnly && (
+                <button
+                  onClick={() => onChange({ title, description, image: undefined })}
+                  className="absolute top-2 right-2 px-2.5 py-1 bg-black/60 text-white text-xs font-medium rounded-lg hover:bg-black/80 transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Title */}
+          {readOnly ? (
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Title</p>
+              <p className="text-base font-semibold text-gray-900">{title || "—"}</p>
+            </div>
+          ) : (
+            <input
+              type="text"
+              placeholder="Title"
+              className="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+              value={title}
+              onChange={(e) => onChange({ title: e.target.value, description, image })}
+            />
+          )}
+
+          {/* Description */}
+          {readOnly ? (
+            description ? (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Note</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{description}</p>
+              </div>
+            ) : null
+          ) : (
+            <textarea
+              placeholder="Description (optional)"
+              className="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black transition resize-none min-h-[80px]"
+              value={description}
+              onChange={(e) => onChange({ title, description: e.target.value, image })}
+            />
+          )}
+
+          {/* Image upload */}
+          {!readOnly && !image && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                Image (optional)
+              </label>
+              <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                <div className="text-center">
+                  <p className="text-sm text-gray-400">Click to upload</p>
+                  <p className="text-xs text-gray-300 mt-0.5">PNG, JPG, GIF</p>
+                </div>
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              </label>
+            </div>
           )}
         </div>
 
-        <input
-          type="text"
-          placeholder="Title"
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={title}
-          disabled={readOnly}
-          onChange={(e) =>
-            onChange({
-              title: e.target.value,
-              description,
-              image,
-            })
-          }
-        />
-
-        <textarea
-          placeholder="Description"
-          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-          value={description}
-          disabled={readOnly}
-          onChange={(e) =>
-            onChange({
-              title,
-              description: e.target.value,
-              image,
-            })
-          }
-        />
-
-        {!readOnly && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Add Image (optional)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full text-sm"
-            />
-          </div>
-        )}
-
-        {image && (
-          <div className="relative">
-            <img
-              src={image}
-              alt="preview"
-              className="w-full h-48 object-cover rounded-lg"
-            />
-            {!readOnly && (
-              <button
-                onClick={() => onChange({ title, description, image: undefined })}
-                className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Remove
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
+        {/* Footer actions */}
+        <div className="px-5 py-4 border-t border-gray-100 flex gap-2 shrink-0">
           <button
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition"
             onClick={onClose}
+            className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
           >
             Close
           </button>
 
           {readOnly && onEdit && (
             <button
-              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition"
               onClick={onEdit}
+              className="flex-1 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-xl transition-colors flex items-center justify-center gap-1.5"
             >
+              <Pencil size={13} />
               Edit
             </button>
           )}
 
           {!readOnly && (
             <button
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
               onClick={onSave}
+              className="flex-1 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-xl transition-colors flex items-center justify-center gap-1.5"
             >
+              <Check size={13} />
               Save
             </button>
           )}

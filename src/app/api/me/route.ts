@@ -7,15 +7,12 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token");
-
     if (!token) {
       return NextResponse.json({ user: null });
     }
-
     const decoded = jwt.verify(token.value, process.env.JWT_SECRET!) as {
       userId: string;
     };
-
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: { 
@@ -25,14 +22,11 @@ export async function GET() {
         name: true 
       },
     });
-
     if (!user) {
       return NextResponse.json({ user: null });
     }
-
     return NextResponse.json({ user });
   } catch (error) {
-    console.error("Auth check error:", error);
     return NextResponse.json({ user: null });
   }
 }
