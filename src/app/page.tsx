@@ -63,6 +63,8 @@ export default function Page() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const engine = useLiveLocation();
 
   // Stable refs to avoid stale closures in event listeners
@@ -146,12 +148,11 @@ export default function Page() {
 
         {activeView === "map" && (
           <>
-            {/* Offline banner */}
-            {!engine.isOnline && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg whitespace-nowrap">
-                📡 You're offline — tracking still active, save when reconnected
-              </div>
-            )}
+         {mounted && !engine.isOnline && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg whitespace-nowrap">
+           📡 You're offline — tracking still active, save when reconnected
+          </div>)}
+        
 
             <div className="absolute inset-0">
               <MapClient
